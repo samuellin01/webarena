@@ -121,7 +121,7 @@ async def agenerate_from_openai_completion(
             engine=engine,
             prompt=prompt,
             temperature=temperature,
-            max_completion=max_tokens,
+            max_tokens=max_tokens,
             top_p=top_p,
             limiter=limiter,
         )
