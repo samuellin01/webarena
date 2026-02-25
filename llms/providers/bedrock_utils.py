@@ -114,10 +114,16 @@ def _invoke_model(
     request_body: dict[str, Any] = {
         "anthropic_version": "bedrock-2023-05-31",
         "max_tokens": max_tokens,
-        "temperature": temperature,
-        "top_p": top_p,
         "messages": anthropic_messages,
     }
+
+    # Bedrock Claude does not allow both temperature and top_p simultaneously.
+    # Prefer temperature; only fall back to top_p if temperature is not set.
+    if temperature is not None:
+        request_body["temperature"] = temperature
+    elif top_p is not None:
+        request_body["top_p"] = top_p
+
     if system_text is not None:
         request_body["system"] = system_text
     if stop_token:
