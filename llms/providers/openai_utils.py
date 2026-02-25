@@ -72,7 +72,7 @@ async def _throttled_openai_completion_acreate(
                     engine=engine,
                     prompt=prompt,
                     temperature=temperature,
-                    max_tokens=max_tokens,
+                    max_completion_tokens=max_tokens,
                     top_p=top_p,
                 )
             except openai.error.RateLimitError:
@@ -121,7 +121,7 @@ async def agenerate_from_openai_completion(
             engine=engine,
             prompt=prompt,
             temperature=temperature,
-            max_tokens=max_tokens,
+            max_completion=max_tokens,
             top_p=top_p,
             limiter=limiter,
         )
@@ -151,7 +151,7 @@ def generate_from_openai_completion(
         prompt=prompt,
         engine=engine,
         temperature=temperature,
-        max_tokens=max_tokens,
+        max_completion_tokens=max_tokens,
         top_p=top_p,
         stop=[stop_token],
     )
@@ -174,7 +174,7 @@ async def _throttled_openai_chat_completion_acreate(
                     model=model,
                     messages=messages,
                     temperature=temperature,
-                    max_tokens=max_tokens,
+                    max_completion_tokens=max_tokens,
                     top_p=top_p,
                 )
             except openai.error.RateLimitError:
