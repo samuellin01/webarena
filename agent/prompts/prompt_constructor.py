@@ -75,6 +75,13 @@ class PromptConstructor(object):
                 raise ValueError(
                     f"OpenAI models do not support mode {self.lm_config.mode}"
                 )
+        elif "bedrock" in self.lm_config.provider:
+            message = [{"role": "system", "content": intro}]
+            for (x, y) in examples:
+                message.append({"role": "user", "content": x})
+                message.append({"role": "assistant", "content": y})
+            message.append({"role": "user", "content": current})
+            return message
         elif "huggingface" in self.lm_config.provider:
             # https://huggingface.co/blog/llama2#how-to-prompt-llama-2
             # https://github.com/facebookresearch/llama/blob/main/llama/generation.py#L320

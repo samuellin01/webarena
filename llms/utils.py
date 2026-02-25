@@ -2,6 +2,7 @@ import argparse
 from typing import Any
 
 from llms import (
+    generate_from_bedrock_chat_completion,
     generate_from_huggingface_completion,
     generate_from_openai_chat_completion,
     generate_from_openai_completion,
@@ -51,6 +52,17 @@ def call_llm(
             top_p=lm_config.gen_config["top_p"],
             stop_sequences=lm_config.gen_config["stop_sequences"],
             max_new_tokens=lm_config.gen_config["max_new_tokens"],
+        )
+    elif lm_config.provider == "bedrock":
+        assert isinstance(prompt, list)
+        response = generate_from_bedrock_chat_completion(
+            messages=prompt,
+            model=lm_config.model,
+            temperature=lm_config.gen_config["temperature"],
+            top_p=lm_config.gen_config["top_p"],
+            context_length=lm_config.gen_config["context_length"],
+            max_tokens=lm_config.gen_config["max_tokens"],
+            stop_token=lm_config.gen_config["stop_token"],
         )
     else:
         raise NotImplementedError(

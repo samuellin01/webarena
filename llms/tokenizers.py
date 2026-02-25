@@ -14,6 +14,8 @@ class Tokenizer(object):
             self.tokenizer.add_special_tokens = False  # type: ignore[attr-defined]
             self.tokenizer.add_bos_token = False  # type: ignore[attr-defined]
             self.tokenizer.add_eos_token = False  # type: ignore[attr-defined]
+        elif provider == "bedrock":
+            self.tokenizer = tiktoken.get_encoding("cl100k_base")
         else:
             raise NotImplementedError
 
