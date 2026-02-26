@@ -131,6 +131,9 @@ def action2str(
                 action_str = f"hover [{element_id}] where [{element_id}] is {semantic_element}"
             case ActionTypes.SCROLL:
                 action_str = f"scroll [{action['direction']}]"
+            case ActionTypes.SELECT_OPTION:
+                option_label = action["pw_code"]
+                action_str = f"select_option [{element_id}] [{option_label}] where [{element_id}] is {semantic_element}"
             case ActionTypes.KEY_PRESS:
                 action_str = f"press [{action['key_comb']}]"
             case ActionTypes.GOTO_URL:
@@ -709,6 +712,21 @@ def create_select_option_action(
 
 
 @beartype
+def create_id_based_select_option_action(
+    element_id: str, option_label: str
+) -> Action:
+    action = create_none_action()
+    action.update(
+        {
+            "action_type": ActionTypes.SELECT_OPTION,
+            "element_id": element_id,
+            "pw_code": option_label,  # store label here for the id-based path
+        }
+    )
+    return action
+
+
+@beartype
 def create_focus_action(
     element_role: RolesType, element_name: str = "", nth: int = 0
 ) -> Action:
@@ -1219,7 +1237,25 @@ def execute_action(
                 page = browser_ctx.new_page()
 
         case ActionTypes.SELECT_OPTION:
-            if action["pw_code"]:
+            if action["element_id"]:
+                element_id = action["element_id"]
+                option_label = action["pw_code"]  # label stored here
+                element_center = obseration_processor.get_element_center(element_id)  # type: ignore[attr-defined]
+                execute_mouse_click(element_center[0], element_center[1], page)
+                page.evaluate("""(label) => {
+                    var active = document.activeElement;
+                    if (active && active.tagName === 'SELECT') {
+                        var options = active.options;
+                        for (var i = 0; i < options.length; i++) {
+                            if (options[i].text.trim() === label.trim()) {
+                                active.value = options[i].value;
+                                active.dispatchEvent(new Event('change', { bubbles: true }));
+                                break;
+                            }
+                        }
+                    }
+                }""", option_label)
+            elif action["pw_code"]:
                 parsed_code = parse_playwright_code(action["pw_code"])
                 locator_code = parsed_code[:-1]
                 execute_playwright_select_option(locator_code, page)
@@ -1349,7 +1385,9 @@ async def aexecute_action(
                 page = await browser_ctx.new_page()
 
         case ActionTypes.SELECT_OPTION:
-            if action["pw_code"]:
+            if action["element_id"]:
+                raise NotImplementedError
+            elif action["pw_code"]:
                 parsed_code = parse_playwright_code(action["pw_code"])
                 locator_code = parsed_code[:-1]
                 await aexecute_playwright_select_option(locator_code, page)
@@ -1587,6 +1625,14 @@ def create_id_based_action(action_str: str) -> Action:
                 )
             page_number = int(match.group(1))
             return create_page_focus_action(page_number)
+        case "select_option":
+            match = re.search(r"select_option ?\[(\d+)\] ?\[(.+)\]", action_str)
+            if not match:
+                raise ActionParsingError(
+                    f"Invalid select_option action {action_str}"
+                )
+            element_id, option_label = match.group(1), match.group(2)
+            return create_id_based_select_option_action(element_id, option_label)
         case "close_tab":
             return create_page_close_action()
         case "stop":  # stop answer

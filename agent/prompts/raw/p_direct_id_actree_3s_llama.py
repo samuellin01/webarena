@@ -7,6 +7,7 @@ Page Operation Actions:
 `hover [id]`: Hover over an element with id.
 `press [key_comb]`:  Simulates the pressing of a key combination on the keyboard (e.g., Ctrl+v).
 `scroll [direction=down|up]`: Scroll the page up or down.
+`select_option [id] [option]`: Use this to select an option from a dropdown or combobox element with the given id. The option should be the visible text of the option you want to select.
 
 Tab Management Actions:
 `new_tab`: Open a new, empty browser tab.
