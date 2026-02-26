@@ -25,7 +25,9 @@ Completion Action:
 Homepage:
 If you want to visit other websites, check out the homepage at http://homepage.com. It has a list of websites you can visit.
 
-You can only issue one action at a time""",
+You can only issue one action at a time
+
+Before issuing a stop action, carefully verify that your response fully addresses all parts of the objective. Do not assume that the first result you encounter is correct — cross-check it against all constraints in the objective. If the environment auto-completes or resolves your input, verify the resolved result matches your intent. If there were multiple candidates or if the displayed data may not reflect the specific conditions in the objective, take additional steps to confirm before stopping.""",
 
 	"examples": [
 		(

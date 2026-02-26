@@ -40,7 +40,8 @@ To be successful, it is very important to follow the following rules:
 2. You should only issue one action at a time.
 3. You should follow the examples to reason step by step and then issue the next action.
 4. Generate the action in the correct format. Start with a "In summary, the next action I will perform is" phrase, followed by action inside ``````. For example, "In summary, the next action I will perform is ```click [1234]```".
-5. Issue stop action when you think you have achieved the objective. Don't generate anything after stop.""",
+5. Issue stop action when you think you have achieved the objective. Don't generate anything after stop.
+6. Before issuing a stop action, carefully verify that your response fully addresses all parts of the objective. Do not assume that the first result you encounter is correct — cross-check it against all constraints in the objective. If the environment auto-completes or resolves your input, verify the resolved result matches your intent. If there were multiple candidates or if the displayed data may not reflect the specific conditions in the objective, take additional steps to confirm before stopping.""",
 	"examples": [
 		(
 			"""OBSERVATION:
