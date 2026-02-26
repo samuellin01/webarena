@@ -9,6 +9,7 @@ Required environment variables:
 """
 
 import json
+import logging
 import os
 import random
 import time
@@ -16,6 +17,8 @@ from typing import Any
 
 import boto3
 import botocore.exceptions
+
+logger = logging.getLogger(__name__)
 
 MODEL_ID_MAP: dict[str, str] = {
     "claude-3-5-v2-sonnet": "us.anthropic.claude-3-5-sonnet-20241022-v2:0",
@@ -135,7 +138,37 @@ def _invoke_model(
         body=json.dumps(request_body),
     )
     response_body = json.loads(response["body"].read())
-    return response_body["content"][0]["text"]
+
+    # --- Token usage logging ---
+    usage = response_body.get("usage", {})
+    input_tokens = usage.get("input_tokens", 0)
+    output_tokens = usage.get("output_tokens", 0)
+    cache_creation = usage.get("cache_creation_input_tokens", 0)
+    cache_read = usage.get("cache_read_input_tokens", 0)
+    total_input = input_tokens + cache_creation + cache_read
+
+    logger.info(
+        f"[Bedrock Token Usage] model={model_id} "
+        f"input={input_tokens} output={output_tokens} "
+        f"cache_creation={cache_creation} cache_read={cache_read} "
+        f"total_input={total_input}"
+    )
+
+    try:
+        with open("bedrock_token_usage.jsonl", "a") as f:
+            f.write(json.dumps({
+                "model": model_id,
+                "input_tokens": input_tokens,
+                "output_tokens": output_tokens,
+                "cache_creation_input_tokens": cache_creation,
+                "cache_read_input_tokens": cache_read,
+                "total_input_tokens": total_input,
+            }) + "\n")
+    except Exception as e:
+        logger.warning(f"Failed to write token usage log: {e}")
+
+    answer: str = response_body["content"][0]["text"]
+    return answer
 
 
 _invoke_model_with_retry = _retry_with_exponential_backoff(_invoke_model)
