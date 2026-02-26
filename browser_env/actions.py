@@ -884,13 +884,19 @@ async def aexecute_click_current(page: APage) -> None:
 
 
 def execute_type(keys: list[int], page: Page) -> None:
-    """Send keystrokes to the focused element."""
+    """Send keystrokes to the focused element. Clears existing text first."""
+    # Select all existing text and delete it before typing
+    page.keyboard.press("Control+a")
+    page.keyboard.press("Backspace")
     text = "".join([_id2key[key] for key in keys])
     page.keyboard.type(text)
 
 
 async def aexecute_type(keys: list[int], page: APage) -> None:
-    """Send keystrokes to the focused element."""
+    """Send keystrokes to the focused element. Clears existing text first."""
+    # Select all existing text and delete it before typing
+    await page.keyboard.press("Control+a")
+    await page.keyboard.press("Backspace")
     text = "".join([_id2key[key] for key in keys])
     await page.keyboard.type(text)
 
@@ -1039,6 +1045,10 @@ def execute_playwright_type(
     pw_action_kwargs: dict[str, Any] = {},
 ) -> None:
     locator = locate(locator_code, page)
+    # Clear existing text before typing
+    locator.click()
+    page.keyboard.press("Control+a")
+    page.keyboard.press("Backspace")
     # perform the action
     pw_action_args = [text] + pw_action_args  # text is the first argument
     locator.type(*pw_action_args, **pw_action_kwargs)
@@ -1052,6 +1062,10 @@ async def aexecute_playwright_type(
     pw_action_kwargs: dict[str, Any] = {},
 ) -> None:
     locator = await alocate(locator_code, page)
+    # Clear existing text before typing
+    await locator.click()
+    await page.keyboard.press("Control+a")
+    await page.keyboard.press("Backspace")
     # perform the action
     pw_action_args = [text] + pw_action_args  # text is the first argument
     await locator.type(*pw_action_args, **pw_action_kwargs)
