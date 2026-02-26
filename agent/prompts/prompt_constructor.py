@@ -35,6 +35,36 @@ class PromptConstructor(object):
         self.instruction: Instruction = instruction
         self.tokenizer = tokenizer
 
+    def _truncate_obs(self, obs: str) -> str:
+        """Truncate observation if max_obs_length is set."""
+        max_obs_length = self.lm_config.gen_config["max_obs_length"]
+        if max_obs_length:
+            obs = self.tokenizer.decode(self.tokenizer.encode(obs)[:max_obs_length])  # type: ignore[arg-type]
+        return obs
+
+    def _build_history_str(
+        self, trajectory: Trajectory, meta_data: dict[str, Any]
+    ) -> str:
+        """Build a string of all previous steps (observation + action)."""
+        history_str = ""
+        action_history = meta_data.get("action_history", [])
+        for i, action_str in enumerate(action_history):
+            if i == 0:
+                continue  # skip the initial "None"
+            # trajectory is interleaved: [state0, action0, state1, action1, ..., stateN]
+            # state before action i is at index 2*(i-1)
+            state_idx = 2 * (i - 1)
+            if 0 <= state_idx < len(trajectory):
+                prev_state: StateInfo = trajectory[state_idx]  # type: ignore[assignment]
+                prev_obs = prev_state["observation"][self.obs_modality]
+                prev_obs = self._truncate_obs(prev_obs)
+                prev_url = prev_state["info"]["page"].url
+                history_str += f"Step {i}:\n"
+                history_str += f"URL: {self.map_url_to_real(prev_url)}\n"
+                history_str += f"Observation: {prev_obs}\n"
+                history_str += f"Action: {action_str}\n\n"
+        return history_str
+
     def get_lm_api_input(
         self, intro: str, examples: list[tuple[str, str]], current: str
     ) -> APIInput:
@@ -177,9 +207,7 @@ class DirectPromptConstructor(PromptConstructor):
         state_info: StateInfo = trajectory[-1]  # type: ignore[assignment]
 
         obs = state_info["observation"][self.obs_modality]
-        max_obs_length = self.lm_config.gen_config["max_obs_length"]
-        if max_obs_length:
-            obs = self.tokenizer.decode(self.tokenizer.encode(obs)[:max_obs_length])  # type: ignore[arg-type]
+        obs = self._truncate_obs(obs)
 
         page = state_info["info"]["page"]
         url = page.url
@@ -192,6 +220,16 @@ class DirectPromptConstructor(PromptConstructor):
             observation=obs,
             previous_action=previous_action_str,
         )
+
+        # Prepend full history
+        history_str = self._build_history_str(trajectory, meta_data)
+        if history_str:
+            current = (
+                "Here is your action history so far:\n\n"
+                + history_str
+                + "Now here is the current state:\n\n"
+                + current
+            )
 
         # make sure all keywords are replaced
         assert all([f"{{k}}" not in current for k in keywords])
@@ -235,9 +273,7 @@ class CoTPromptConstructor(PromptConstructor):
         state_info: StateInfo = trajectory[-1]  # type: ignore[assignment]
 
         obs = state_info["observation"][self.obs_modality]
-        max_obs_length = self.lm_config.gen_config["max_obs_length"]
-        if max_obs_length:
-            obs = self.tokenizer.decode(self.tokenizer.encode(obs)[:max_obs_length])  # type: ignore[arg-type]
+        obs = self._truncate_obs(obs)
 
         page = state_info["info"]["page"]
         url = page.url
@@ -248,6 +284,16 @@ class CoTPromptConstructor(PromptConstructor):
             observation=obs,
             previous_action=previous_action_str,
         )
+
+        # Prepend full history
+        history_str = self._build_history_str(trajectory, meta_data)
+        if history_str:
+            current = (
+                "Here is your action history so far:\n\n"
+                + history_str
+                + "Now here is the current state:\n\n"
+                + current
+            )
 
         assert all([f"{{k}}" not in current for k in keywords])
 
